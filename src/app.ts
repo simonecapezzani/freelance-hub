@@ -1,5 +1,6 @@
 import express, { type Express } from 'express';
 import { errorHandler, notFoundHandler } from './middleware/error.middleware.ts';
+import authRoutes from './routes/auth.routes.ts';
 
 const app: Express = express();
 
@@ -9,8 +10,9 @@ app.get('/health', (_req, res) => {
   res.json({ status: 'ok' });
 });
 
+app.use('/auth', authRoutes);
+
 // Routes will be mounted in upcoming steps:
-// app.use('/auth', authRoutes);
 // app.use('/clients', clientRoutes);
 // app.use('/tasks', taskRoutes);
 
