@@ -1,22 +1,6 @@
 import type { NextFunction, Request, Response } from 'express';
-import { User } from '../models/user.model.ts';
-import {
-  buildAuthResponse,
-  comparePassword,
-  hashPassword,
-} from '../utils/auth.utils.ts';
-import { createHttpError, isNonEmptyString } from '../utils/http.utils.ts';
-
-interface RegisterBody {
-  email?: string;
-  password?: string;
-  name?: string;
-}
-
-interface LoginBody {
-  email?: string;
-  password?: string;
-}
+import { toAuthResponse } from '../mappers/auth.mapper.ts';
+import * as authService from '../services/auth.service.ts';
 
 /**
  * Registers a new user and returns a JWT access token.
@@ -27,38 +11,9 @@ export async function register(
   next: NextFunction,
 ): Promise<void> {
   try {
-    const { email, password, name } = req.body as RegisterBody;
-
-    if (!isNonEmptyString(email) || !isNonEmptyString(password) || !isNonEmptyString(name)) {
-      throw createHttpError('Email, password, and name are required', 400);
-    }
-
-    const normalizedEmail = email.trim().toLowerCase();
-    const existingUser = await User.findOne({ email: normalizedEmail });
-
-    if (existingUser) {
-      throw createHttpError('Email already in use', 400);
-    }
-
-    const hashedPassword = await hashPassword(password);
-    const user = await User.create({
-      email: normalizedEmail,
-      password: hashedPassword,
-      name: name.trim(),
-    });
-
-    res.status(201).json(buildAuthResponse(user));
+    const user = await authService.register(req.body);
+    res.status(201).json(toAuthResponse(user));
   } catch (error) {
-    if (
-      typeof error === 'object' &&
-      error !== null &&
-      'code' in error &&
-      error.code === 11000
-    ) {
-      next(createHttpError('Email already in use', 400));
-      return;
-    }
-
     next(error);
   }
 }
@@ -72,25 +27,8 @@ export async function login(
   next: NextFunction,
 ): Promise<void> {
   try {
-    const { email, password } = req.body as LoginBody;
-
-    if (!isNonEmptyString(email) || !isNonEmptyString(password)) {
-      throw createHttpError('Email and password are required', 400);
-    }
-
-    const user = await User.findOne({ email: email.trim().toLowerCase() });
-
-    if (!user) {
-      throw createHttpError('Invalid credentials', 401);
-    }
-
-    const passwordMatches = await comparePassword(password, user.password);
-
-    if (!passwordMatches) {
-      throw createHttpError('Invalid credentials', 401);
-    }
-
-    res.json(buildAuthResponse(user));
+    const user = await authService.login(req.body);
+    res.json(toAuthResponse(user));
   } catch (error) {
     next(error);
   }

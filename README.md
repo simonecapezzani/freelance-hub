@@ -274,6 +274,10 @@ src/
 │   ├── auth.controller.ts
 │   ├── client.controller.ts
 │   └── task.controller.ts
+├── mappers/
+│   ├── auth.mapper.ts
+│   ├── client.mapper.ts
+│   └── task.mapper.ts
 ├── middleware/
 │   ├── auth.middleware.ts    # JWT verification
 │   └── error.middleware.ts
@@ -285,11 +289,21 @@ src/
 │   ├── auth.routes.ts
 │   ├── client.routes.ts
 │   └── task.routes.ts
+├── services/
+│   ├── auth.service.ts
+│   ├── client.service.ts
+│   └── task.service.ts
 ├── types/
 │   └── index.ts              # Shared TypeScript types
 ├── utils/
 │   ├── auth.utils.ts         # Password hashing, JWT signing
-│   └── http.utils.ts         # HTTP helpers, Bearer token parsing
+│   ├── http.utils.ts         # HTTP helpers, Bearer token parsing
+│   └── validation/           # Request payload validators
+│       ├── validation.utils.ts
+│       ├── auth.validator.ts
+│       ├── client.validator.ts
+│       ├── task.validator.ts
+│       └── index.ts
 ├── app.ts                    # Express app setup
 └── server.ts                 # Entry point
 ```
@@ -301,7 +315,8 @@ src/
 - [x] Auth (register, login, JWT middleware)
 - [x] Client CRUD endpoints
 - [x] Task endpoints with status filtering
-- [ ] Request validation and test suite
+- [x] Request validation (payload validators)
+- [ ] Test suite
 
 ## License
 
