@@ -132,7 +132,7 @@ All client routes require authentication.
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | `GET` | `/clients` | List clients for the authenticated user |
-| `POST` | `/clients/create` | Create a client |
+| `POST` | `/clients` | Create a client |
 | `GET` | `/clients/:id` | Get client detail (team members & projects) |
 | `PATCH` | `/clients/:id` | Update a client |
 | `DELETE` | `/clients/:id` | Delete a client |
@@ -200,7 +200,7 @@ curl -X POST http://localhost:3000/auth/register \
   -d '{"email":"you@example.com","password":"secret123","name":"Simone"}'
 
 # Create a client (use token from register/login response)
-curl -X POST http://localhost:3000/clients/create \
+curl -X POST http://localhost:3000/clients \
   -H "Authorization: Bearer <token>" \
   -H "Content-Type: application/json" \
   -d '{"name":"Acme Corp","company":"Acme"}'

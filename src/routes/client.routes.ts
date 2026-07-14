@@ -14,7 +14,7 @@ const router = Router();
 router.use(authenticate);
 
 router.get('/', listClients);
-router.post('/create', createClient);
+router.post('/', createClient);
 router.post('/:id/tasks', createTask);
 router.get('/:id/tasks', listTasks);
 router.get('/:id', getClient);
