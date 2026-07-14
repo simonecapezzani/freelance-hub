@@ -8,6 +8,7 @@ Built with **Node.js**, **Express**, **TypeScript**, and **MongoDB**.
 
 - **JWT authentication** — register and login with bcrypt-hashed passwords
 - **Client management** — CRUD for clients scoped to the authenticated user
+- **Task tracking** — create and update tasks per client, filter by status
 - **Embedded data** — team members and projects stored inside each client document
 - **Multi-tenant by design** — every resource is filtered by `userId` from the JWT
 
@@ -155,6 +156,41 @@ All client routes require authentication.
 
 `PATCH` accepts partial updates. When `teamMembers` or `projects` are sent, the entire array is replaced.
 
+### Tasks
+
+All task routes require authentication.
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/clients/:id/tasks` | Create a task for a client |
+| `GET` | `/clients/:id/tasks` | List client tasks (`?status=todo` filter) |
+| `PATCH` | `/tasks/:id` | Update task status or priority |
+
+**Create task body** (`title` required):
+
+```json
+{
+  "title": "Implement login page",
+  "description": "OAuth + email/password",
+  "projectId": "<embedded-project-id>",
+  "status": "todo",
+  "priority": "high",
+  "dueDate": "2026-08-01T00:00:00.000Z"
+}
+```
+
+**Update task body** (partial, `status` and/or `priority`):
+
+```json
+{
+  "status": "in_progress",
+  "priority": "medium"
+}
+```
+
+Task status: `cancelled` | `todo` | `in_progress` | `test` | `done`  
+Task priority: `low` | `medium` | `high`
+
 ### Example flow
 
 ```bash
@@ -172,6 +208,22 @@ curl -X POST http://localhost:3000/clients/create \
 # List clients
 curl http://localhost:3000/clients \
   -H "Authorization: Bearer <token>"
+
+# Create a task for a client
+curl -X POST http://localhost:3000/clients/<client-id>/tasks \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{"title":"Setup CI","priority":"high"}'
+
+# List tasks filtered by status
+curl "http://localhost:3000/clients/<client-id>/tasks?status=todo" \
+  -H "Authorization: Bearer <token>"
+
+# Update task status
+curl -X PATCH http://localhost:3000/tasks/<task-id> \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{"status":"in_progress"}'
 ```
 
 ## Data Models
@@ -188,6 +240,13 @@ curl http://localhost:3000/clients \
 - Embedded `projects`: `{ name, description?, status, createdAt }`
   - Project status: `cancelled` | `pending` | `active` | `completed` | `paused`
 
+### Task
+
+- `userId`, `clientId`, optional `projectId` (embedded project on client)
+- `title`, `description`, `dueDate`, `createdAt`
+- Status: `cancelled` | `todo` | `in_progress` | `test` | `done` (default: `todo`)
+- Priority: `low` | `medium` | `high` (default: `medium`)
+
 ## Project Structure
 
 ```
@@ -197,16 +256,19 @@ src/
 │   └── env.ts                # Environment validation
 ├── controllers/
 │   ├── auth.controller.ts
-│   └── client.controller.ts
+│   ├── client.controller.ts
+│   └── task.controller.ts
 ├── middleware/
 │   ├── auth.middleware.ts    # JWT verification
 │   └── error.middleware.ts
 ├── models/
 │   ├── user.model.ts
-│   └── client.model.ts
+│   ├── client.model.ts
+│   └── task.model.ts
 ├── routes/
 │   ├── auth.routes.ts
-│   └── client.routes.ts
+│   ├── client.routes.ts
+│   └── task.routes.ts
 ├── types/
 │   └── index.ts              # Shared TypeScript types
 ├── utils/
@@ -215,3 +277,16 @@ src/
 ├── app.ts                    # Express app setup
 └── server.ts                 # Entry point
 ```
+
+## Roadmap
+
+- [x] Project bootstrap (TypeScript, Express, MongoDB, env config)
+- [x] Shared types
+- [x] Auth (register, login, JWT middleware)
+- [x] Client CRUD endpoints
+- [x] Task endpoints with status filtering
+- [ ] Request validation and test suite
+
+## License
+
+ISC
