@@ -81,6 +81,26 @@ npm start
 | `npm run build` | Compile TypeScript to `dist/` |
 | `npm start` | Run compiled production build |
 | `npm run typecheck` | Type-check without emitting files |
+| `npm test` | Run the Vitest test suite |
+| `npm run test:watch` | Run Vitest in watch mode |
+
+## Tests
+
+The initial test suite covers the validation and authentication service layers:
+
+```
+tests/
+├── services/
+│   └── auth.service.test.ts
+└── validation/
+    └── task.validator.test.ts
+```
+
+Run the tests with:
+
+```bash
+npm test
+```
 
 ## Authentication
 
@@ -316,7 +336,7 @@ src/
 - [x] Client CRUD endpoints
 - [x] Task endpoints with status filtering
 - [x] Request validation (payload validators)
-- [ ] Test suite
+- [x] Initial validation and authentication service tests
 
 ## License
 
