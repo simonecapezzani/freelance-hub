@@ -164,7 +164,9 @@ All task routes require authentication.
 |--------|----------|-------------|
 | `POST` | `/clients/:id/tasks` | Create a task for a client |
 | `GET` | `/clients/:id/tasks` | List client tasks (`?status=todo` filter) |
-| `PATCH` | `/tasks/:id` | Update task status or priority |
+| `GET` | `/tasks/:id` | Get task detail |
+| `PATCH` | `/tasks/:id` | Partial update (title, description, status, priority, dueDate, projectId) |
+| `DELETE` | `/tasks/:id` | Delete a task |
 
 **Create task body** (`title` required):
 
@@ -179,14 +181,20 @@ All task routes require authentication.
 }
 ```
 
-**Update task body** (partial, `status` and/or `priority`):
+**Update task body** (partial):
 
 ```json
 {
+  "title": "Implement login page v2",
+  "description": "Add OAuth providers",
   "status": "in_progress",
-  "priority": "medium"
+  "priority": "medium",
+  "dueDate": "2026-08-15T00:00:00.000Z",
+  "projectId": "<embedded-project-id>"
 }
 ```
+
+Send `null` for `dueDate` or `projectId` to clear those fields.
 
 Task status: `cancelled` | `todo` | `in_progress` | `test` | `done`  
 Task priority: `low` | `medium` | `high`
@@ -219,11 +227,19 @@ curl -X POST http://localhost:3000/clients/<client-id>/tasks \
 curl "http://localhost:3000/clients/<client-id>/tasks?status=todo" \
   -H "Authorization: Bearer <token>"
 
-# Update task status
+# Get task detail
+curl http://localhost:3000/tasks/<task-id> \
+  -H "Authorization: Bearer <token>"
+
+# Update task
 curl -X PATCH http://localhost:3000/tasks/<task-id> \
   -H "Authorization: Bearer <token>" \
   -H "Content-Type: application/json" \
-  -d '{"status":"in_progress"}'
+  -d '{"title":"Setup CI pipeline","status":"in_progress"}'
+
+# Delete task
+curl -X DELETE http://localhost:3000/tasks/<task-id> \
+  -H "Authorization: Bearer <token>"
 ```
 
 ## Data Models

@@ -24,8 +24,12 @@ interface CreateTaskBody {
 }
 
 interface UpdateTaskBody {
+  title?: string;
+  description?: string;
+  projectId?: string | null;
   status?: TaskStatus;
   priority?: TaskPriority;
+  dueDate?: string | null;
 }
 
 /**
@@ -92,6 +96,25 @@ function validateProjectId(client: IClientDocument, projectId: string): void {
   if (!projectExists) {
     throw createHttpError('Project not found on client', 400);
   }
+}
+
+/**
+ * Returns a task owned by the authenticated user or throws 404.
+ * @param taskId - Task id from route params
+ * @param userId - Authenticated user id
+ * @returns Task document
+ */
+async function findOwnedTask(
+  taskId: string,
+  userId: string,
+): Promise<ITaskDocument> {
+  const task = await Task.findOne({ _id: taskId, userId });
+
+  if (!task) {
+    throw createHttpError('Task not found', 404);
+  }
+
+  return task;
 }
 
 /**
@@ -179,7 +202,23 @@ export async function listTasks(
 }
 
 /**
- * Updates the status or priority of a task owned by the authenticated user.
+ * Returns a single task owned by the authenticated user.
+ */
+export async function getTask(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const task = await findOwnedTask(getRouteId(req.params.id), getUserId(req));
+    res.json(toTaskResponse(task));
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * Partially updates a task owned by the authenticated user.
  */
 export async function updateTask(
   req: Request,
@@ -189,12 +228,21 @@ export async function updateTask(
   try {
     const taskId = getRouteId(req.params.id);
     const userId = getUserId(req);
-    const { status, priority } = req.body as UpdateTaskBody;
+    const { title, description, projectId, status, priority, dueDate } =
+      req.body as UpdateTaskBody;
 
-    const task = await Task.findOne({ _id: taskId, userId });
+    const task = await findOwnedTask(taskId, userId);
 
-    if (!task) {
-      throw createHttpError('Task not found', 404);
+    if (title !== undefined) {
+      if (!isNonEmptyString(title)) {
+        throw createHttpError('Title cannot be empty', 400);
+      }
+
+      task.title = title.trim();
+    }
+
+    if (description !== undefined) {
+      task.description = isNonEmptyString(description) ? description.trim() : undefined;
     }
 
     if (status !== undefined) {
@@ -213,8 +261,51 @@ export async function updateTask(
       task.priority = priority;
     }
 
+    if (dueDate !== undefined) {
+      if (dueDate === null) {
+        task.dueDate = undefined;
+      } else {
+        const parsedDueDate = new Date(dueDate);
+
+        if (Number.isNaN(parsedDueDate.getTime())) {
+          throw createHttpError('Invalid dueDate', 400);
+        }
+
+        task.dueDate = parsedDueDate;
+      }
+    }
+
+    if (projectId !== undefined) {
+      if (projectId === null || projectId === '') {
+        task.projectId = undefined;
+      } else if (isNonEmptyString(projectId)) {
+        const client = await findOwnedClient(task.clientId.toString(), userId);
+        validateProjectId(client, projectId);
+        task.projectId = projectId as unknown as ITaskDocument['projectId'];
+      } else {
+        throw createHttpError('Invalid projectId', 400);
+      }
+    }
+
     await task.save();
     res.json(toTaskResponse(task));
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * Deletes a task owned by the authenticated user.
+ */
+export async function deleteTask(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const task = await findOwnedTask(getRouteId(req.params.id), getUserId(req));
+    await task.deleteOne();
+    res.status(204).send();
   } catch (error) {
     next(error);
   }
