@@ -1,11 +1,11 @@
 import type { NextFunction, Request, Response } from 'express';
 import { User } from '../models/user.model.ts';
-import type { ApiError } from '../middleware/error.middleware.ts';
 import {
   buildAuthResponse,
   comparePassword,
   hashPassword,
 } from '../utils/auth.utils.ts';
+import { createHttpError, isNonEmptyString } from '../utils/http.utils.ts';
 
 interface RegisterBody {
   email?: string;
@@ -16,26 +16,6 @@ interface RegisterBody {
 interface LoginBody {
   email?: string;
   password?: string;
-}
-
-/**
- * Creates an HTTP error with a status code for the global error handler.
- * @param message - Error message returned to the client
- * @param statusCode - HTTP status code
- * @returns Error object with statusCode
- */
-function createHttpError(message: string, statusCode: number): ApiError {
-  const error = new Error(message) as ApiError;
-  error.statusCode = statusCode;
-  return error;
-}
-
-/**
- * Returns true when the value is a non-empty string.
- * @param value - Value to validate
- */
-function isNonEmptyString(value: unknown): value is string {
-  return typeof value === 'string' && value.trim().length > 0;
 }
 
 /**

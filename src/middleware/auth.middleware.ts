@@ -2,6 +2,7 @@ import type { NextFunction, Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import { getEnvConfig } from '../config/env.ts';
 import type { AuthRequest, JwtPayload } from '../types/index.ts';
+import { extractBearerToken } from '../utils/http.utils.ts';
 
 /**
  * Verifies the Bearer JWT and attaches the authenticated user id to the request.
@@ -11,14 +12,12 @@ export function authenticate(
   res: Response,
   next: NextFunction,
 ): void {
-  const authHeader = req.headers.authorization;
+  const token = extractBearerToken(req.headers.authorization);
 
-  if (!authHeader?.startsWith('Bearer ')) {
+  if (!token) {
     res.status(401).json({ message: 'Unauthorized' });
     return;
   }
-
-  const token = authHeader.slice('Bearer '.length);
 
   try {
     const { jwtSecret } = getEnvConfig();
